@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
@@ -25,20 +26,20 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
-
+    private MediaRecorder mediaRecorder;
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 1;
     private static final int TAKE_PICTURE_PERMISSION = 2;
+    private static final int RECORD_AUDIO_PERMISSION = 3;
     public AppCompatActivity appCompatActivity;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,14 +66,15 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        mediaRecorder = null;
 
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, ASK_MULTIPLE_PERMISSION_REQUEST_CODE);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, ASK_MULTIPLE_PERMISSION_REQUEST_CODE);
 
         TextView takePictureTextView = (TextView) findViewById(R.id.textViewTakePicture);
         takePictureTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                tryToTakePicture();
+                takePicture();
             }
         });
 
@@ -80,7 +82,8 @@ public class MainActivity extends AppCompatActivity
         recordAudioTextVideo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(appCompatActivity, "Record audio not implemented", Toast.LENGTH_LONG).show();
+                //Toast.makeText(appCompatActivity, "Record audio not implemented", Toast.LENGTH_LONG).show();
+                recordAudio();
             }
         });
 
@@ -96,12 +99,20 @@ public class MainActivity extends AppCompatActivity
         textViewStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(appCompatActivity, "Stop not implemented", Toast.LENGTH_LONG).show();
+                stopRecording();
             }
         });
     }
+    public void stopRecording(){
+        if(mediaRecorder != null) {
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            mediaRecorder = null;
+            Toast.makeText(appCompatActivity, "Recording stopped", Toast.LENGTH_LONG).show();
+        }
+    }
 
-    public void tryToTakePicture() {
+    public void takePicture() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, TAKE_PICTURE_PERMISSION);
@@ -117,10 +128,10 @@ public class MainActivity extends AppCompatActivity
                 return;
             }
         }
-        takePicture();
+        actualTakePicture();
     }
 
-    private void takePicture() {
+    private void actualTakePicture() {
         Camera mCamera = Camera.open();
         try {
             mCamera.setPreviewTexture(new SurfaceTexture(10));
@@ -149,6 +160,41 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+    }
+    private void recordAudio(){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION);
+                return;
+            } else {
+                showMessageOKCancel("You need to allow access to the microphone and external storage to record audio.",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION);
+                            }
+                        });
+                return;
+            }
+        }
+        actualRecordAudio();
+    }
+
+    private void actualRecordAudio() {
+        String filename = getExternalCacheDir().getAbsolutePath() + "/audiorecordtest.3gp";
+        //Saved to: Phone\Android\data\me.brandonyuh.secretrecord\cache
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setOutputFile(filename);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        try {
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+
+        }
+        mediaRecorder.start();
+        Toast.makeText(this, "Audio Recording: "+filename, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -217,7 +263,35 @@ public class MainActivity extends AppCompatActivity
                 .show();
     }
 
-    public Context getActivity() {
-        return this;
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case TAKE_PICTURE_PERMISSION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    actualTakePicture();
+                } else {
+                    //Can not use camera
+                }
+                return;
+            }
+            case RECORD_AUDIO_PERMISSION:{
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    actualRecordAudio();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mediaRecorder != null) {
+            mediaRecorder.release();
+            mediaRecorder = null;
+        }
     }
 }
