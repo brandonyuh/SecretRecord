@@ -23,21 +23,26 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.android.camera2video.R;
 
 public class CameraActivity extends AppCompatActivity {
-
+    private boolean isRecording;
+    private Camera2VideoFragment camera2VideoFragment;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+        camera2VideoFragment = Camera2VideoFragment.newInstance();
         if (null == savedInstanceState) {
             getFragmentManager().beginTransaction()
-                    .replace(R.id.container, Camera2VideoFragment.newInstance())
+                    .replace(R.id.container, camera2VideoFragment)
                     .commit();
         }
+        isRecording = false;
+
 
     }
 
@@ -54,14 +59,26 @@ public class CameraActivity extends AppCompatActivity {
             case R.id.action_settings:
                 Toast.makeText(this, "Settings not implemented", Toast.LENGTH_LONG).show();
                 return true;
-
-
             default:
                 // If we got here, the user's action was not recognized.
                 // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    public void startRecordingVideo(View view){
+        if(!isRecording) {
+            camera2VideoFragment.startRecordingVideo();
+        }
+        isRecording = true;
+    }
+
+    public void stopRecordingVideo(View view){
+        if(isRecording) {
+            camera2VideoFragment.stopRecordingVideo();
+        }
+        isRecording = false;
     }
 
 }
