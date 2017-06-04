@@ -2,6 +2,7 @@ package me.brandonyuh.secretrecord;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,7 +12,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -25,31 +25,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, SurfaceHolder.Callback {
-    private MediaRecorder mMediaRecorder;
+        implements NavigationView.OnNavigationItemSelectedListener {
+    private MediaRecorder mediaRecorder;
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 1;
     private static final int TAKE_PICTURE_PERMISSION = 2;
     private static final int RECORD_AUDIO_PERMISSION = 3;
     public AppCompatActivity appCompatActivity;
-    private static final String VIDEO_PATH_NAME = "/Pictures/test.3gp";
-    private Camera mCamera;
-    private SurfaceView mSurfaceView;
-    private SurfaceHolder mHolder;
-    private View mToggleButton;
-    private boolean mInitSuccesful;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +66,7 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        mMediaRecorder = null;
+        mediaRecorder = null;
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, ASK_MULTIPLE_PERMISSION_REQUEST_CODE);
 
@@ -112,37 +102,12 @@ public class MainActivity extends AppCompatActivity
                 stopRecording();
             }
         });
-
-        mSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
-        mHolder = mSurfaceView.getHolder();
-        mHolder.addCallback(this);
-        mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
-        mToggleButton = (ToggleButton) findViewById(R.id.toggleRecordingButton);
-        mToggleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            // toggle video recording
-            public void onClick(View v) {
-                if (((ToggleButton) v).isChecked())
-                    mMediaRecorder.start();
-                else {
-                    mMediaRecorder.stop();
-                    mMediaRecorder.reset();
-                    try {
-                        initRecorder(mHolder.getSurface());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
     }
-
-    public void stopRecording() {
-        if (mMediaRecorder != null) {
-            mMediaRecorder.stop();
-            mMediaRecorder.release();
-            mMediaRecorder = null;
+    public void stopRecording(){
+        if(mediaRecorder != null) {
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            mediaRecorder = null;
             Toast.makeText(appCompatActivity, "Recording stopped", Toast.LENGTH_LONG).show();
         }
     }
@@ -183,20 +148,20 @@ public class MainActivity extends AppCompatActivity
         mCamera.takePicture(null, null, null, new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
-                if (data != null) {
+                if(data != null) {
                     Calendar calendar = Calendar.getInstance();
                     String datetime = Long.toString(calendar.getTimeInMillis());
                     Toast.makeText(appCompatActivity, "Picture taken", Toast.LENGTH_LONG).show();
                     Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                     MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, datetime, datetime);
-                } else {
+                }
+                else{
                     Toast.makeText(appCompatActivity, "NULL!", Toast.LENGTH_LONG).show();
                 }
             }
         });
     }
-
-    private void recordAudio() {
+    private void recordAudio(){
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION);
@@ -218,18 +183,18 @@ public class MainActivity extends AppCompatActivity
     private void actualRecordAudio() {
         String filename = getExternalCacheDir().getAbsolutePath() + "/audiorecordtest.3gp";
         //Saved to: Phone\Android\data\me.brandonyuh.secretrecord\cache
-        mMediaRecorder = new MediaRecorder();
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mMediaRecorder.setOutputFile(filename);
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setOutputFile(filename);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
         try {
-            mMediaRecorder.prepare();
+            mediaRecorder.prepare();
         } catch (IOException e) {
 
         }
-        mMediaRecorder.start();
-        Toast.makeText(this, "Audio Recording: " + filename, Toast.LENGTH_LONG).show();
+        mediaRecorder.start();
+        Toast.makeText(this, "Audio Recording: "+filename, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -312,7 +277,7 @@ public class MainActivity extends AppCompatActivity
                 }
                 return;
             }
-            case RECORD_AUDIO_PERMISSION: {
+            case RECORD_AUDIO_PERMISSION:{
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     actualRecordAudio();
@@ -324,89 +289,9 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onStop() {
         super.onStop();
-        if (mMediaRecorder != null) {
-            mMediaRecorder.release();
-            mMediaRecorder = null;
+        if (mediaRecorder != null) {
+            mediaRecorder.release();
+            mediaRecorder = null;
         }
-    }
-
-    private void initRecorder(Surface surface) throws IOException {
-        // It is very important to unlock the camera before doing setCamera
-        // or it will results in a black preview
-        if (mCamera == null) {
-            mCamera = Camera.open();
-            mCamera.unlock();
-        }
-
-        if (mMediaRecorder == null)
-            mMediaRecorder = new MediaRecorder();
-        mMediaRecorder.setPreviewDisplay(surface);
-        mMediaRecorder.setCamera(mCamera);
-
-        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
-        File file = new File(Environment.getExternalStorageDirectory(), VIDEO_PATH_NAME);
-        // "touch" the file
-        if (!file.exists()) {
-            File parent = file.getParentFile();
-            if (parent != null)
-                if (!parent.exists())
-                    if (!parent.mkdirs())
-                        throw new IOException("Cannot create " +
-                                "parent directories for file: " + file);
-
-            file.createNewFile();
-        }
-
-        mMediaRecorder.setOutputFile(file.getAbsolutePath());
-
-        // No limit. Check the space on disk!
-        mMediaRecorder.setMaxDuration(-1);
-        mMediaRecorder.setVideoFrameRate(15);
-
-        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
-
-        try {
-            mMediaRecorder.prepare();
-        } catch (IllegalStateException e) {
-            // This is thrown if the previous calls are not called with the
-            // proper order
-            e.printStackTrace();
-        }
-
-        mInitSuccesful = true;
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        try {
-            if (!mInitSuccesful)
-                initRecorder(mHolder.getSurface());
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        shutdown();
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-    }
-
-    private void shutdown() {
-        // Release MediaRecorder and especially the Camera as it's a shared
-        // object that can be used by other applications
-        mMediaRecorder.reset();
-        mMediaRecorder.release();
-        mCamera.release();
-
-        // once the objects have been released they can't be reused
-        mMediaRecorder = null;
-        mCamera = null;
     }
 }

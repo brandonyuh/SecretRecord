@@ -7,7 +7,6 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="me.brandonyuh.secretrecord.MainActivity"
     tools:showIn="@layout/app_bar_main">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,42 +18,24 @@
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
             android:text="Record Video" />
-
         <TextView
             android:id="@+id/textViewRecordAudio"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
             android:text="Record Audio" />
-
         <TextView
             android:id="@+id/textViewStop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
             android:text="Stop" />
-
         <TextView
             android:id="@+id/textViewTakePicture"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/text_margin"
             android:text="Take Picture" />
-
-        <ToggleButton
-            android:id="@+id/toggleRecordingButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textOff="Start Recording"
-            android:textOn="Stop Recording" />
-        <FrameLayout
-            android:layout_width="fill_parent"
-            android:layout_height="100dp">
-            <SurfaceView android:id="@+id/surfaceView"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"></SurfaceView>
-
-        </FrameLayout>
 
     </LinearLayout>
 </android.support.v4.widget.NestedScrollView>
